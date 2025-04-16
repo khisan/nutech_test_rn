@@ -10,6 +10,8 @@ import {
 import {useForm, Controller} from 'react-hook-form';
 import {useNavigation} from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import axios from 'axios';
+import Toast from 'react-native-toast-message';
 
 const LoginScreen = () => {
   const navigation = useNavigation();
@@ -19,15 +21,46 @@ const LoginScreen = () => {
     formState: {errors},
   } = useForm();
 
-  const onSubmit = data => {
-    console.log(data.email);
-    console.log(data.password);
-
-    // Contoh lempar ke login API
-    // loginUser(data.email, data.password);
-  };
-
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const onSubmit = async data => {
+    setIsLoading(true);
+    setErrorMessage('');
+
+    try {
+      const response = await axios.post('http://localhost:3000/login', {
+        email: data.email,
+        password: data.password,
+      });
+      Toast.show({
+        type: 'success',
+        position: 'bottom',
+        text1: 'Login Berhasil!',
+        text2: 'Selamat datang, Anda berhasil login.',
+        visibilityTime: 3000,
+      });
+
+      navigation.navigate('main');
+    } catch (error) {
+      if (error.response) {
+        setErrorMessage(error.response.data.message || 'Login failed');
+      } else {
+        setErrorMessage('An error occurred. Please try again.');
+      }
+
+      Toast.show({
+        type: 'error',
+        position: 'bottom',
+        text1: 'Login Gagal!',
+        text2: errorMessage || 'Coba lagi nanti.',
+        visibilityTime: 3000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -45,8 +78,6 @@ const LoginScreen = () => {
         <Text style={styles.heading}>SIMS PPOB</Text>
       </View>
       <Text style={styles.subheading}>Masuk atau buat akun untuk memulai</Text>
-
-      {/* Email input */}
       <Controller
         control={control}
         name="email"
@@ -78,8 +109,6 @@ const LoginScreen = () => {
           </>
         )}
       />
-
-      {/* Password input */}
       <Controller
         control={control}
         name="password"
@@ -89,7 +118,7 @@ const LoginScreen = () => {
             <View
               style={[
                 styles.inputWrapper,
-                errors.email && {borderColor: 'red'},
+                errors.password && {borderColor: 'red'},
               ]}>
               <MaterialCommunityIcons
                 name="lock-outline"
@@ -118,17 +147,15 @@ const LoginScreen = () => {
           </>
         )}
       />
-
-      {/* Button */}
       <TouchableOpacity
         style={styles.button}
         onPress={() => {
           handleSubmit(onSubmit)();
         }}>
-        <Text style={styles.buttonText}>Masuk</Text>
+        <Text style={styles.buttonText}>
+          {isLoading ? 'Loading...' : 'Masuk'}
+        </Text>
       </TouchableOpacity>
-
-      {/* Register text */}
       <Text style={styles.footerText}>
         Belum punya akun?{' '}
         <Text
@@ -137,6 +164,7 @@ const LoginScreen = () => {
           Registrasi di sini
         </Text>
       </Text>
+      <Toast />
     </View>
   );
 };
@@ -149,12 +177,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  logo: {
-    width: 48,
-    height: 48,
-    marginBottom: 16,
-    marginRight: 12,
-  },
   heading: {
     fontSize: 22,
     fontWeight: 'bold',
@@ -165,13 +187,22 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 32,
   },
-  input: {
-    width: '100%',
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 8,
-    padding: 12,
+    paddingHorizontal: 12,
     marginBottom: 16,
+    width: '100%',
+  },
+  inputIcon: {
+    marginRight: 8,
+  },
+  inputField: {
+    flex: 1,
+    height: 40,
   },
   button: {
     width: '100%',
@@ -193,23 +224,6 @@ const styles = StyleSheet.create({
   link: {
     color: '#D00000',
     fontWeight: 'bold',
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    marginBottom: 16,
-    width: '100%',
-  },
-  inputIcon: {
-    marginRight: 8,
-  },
-  inputField: {
-    flex: 1,
-    height: 40,
   },
   errorText: {
     color: 'red',
