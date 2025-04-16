@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -6,9 +6,12 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Image,
 } from 'react-native';
 import {useForm, Controller} from 'react-hook-form';
 import {useNavigation} from '@react-navigation/native';
+import axios from 'axios';
+import Toast from 'react-native-toast-message';
 
 const RegisterScreen = () => {
   const navigation = useNavigation();
@@ -19,19 +22,69 @@ const RegisterScreen = () => {
     formState: {errors},
   } = useForm();
 
-  const onSubmit = data => {
-    console.log('Form submitted:', data);
-    // bisa dihubungkan ke API nanti
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const onSubmit = async data => {
+    setIsLoading(true);
+    setErrorMessage('');
+
+    try {
+      const response = await axios.post(API_ENDPOINTS.Login, {
+        email: data.email,
+        password: data.password,
+      });
+      Toast.show({
+        type: 'success',
+        position: 'bottom',
+        text1: 'Login Berhasil!',
+        text2: 'Selamat datang, Anda berhasil login.',
+        visibilityTime: 3000,
+      });
+
+      navigation.navigate('main');
+    } catch (error) {
+      if (error.response) {
+        setErrorMessage(error.response.data.message || 'Login failed');
+      } else {
+        setErrorMessage('An error occurred. Please try again.');
+      }
+
+      Toast.show({
+        type: 'error',
+        position: 'bottom',
+        text1: 'Login Gagal!',
+        text2: errorMessage || 'Coba lagi nanti.',
+        visibilityTime: 3000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.logo}>🔴 SIMS PPOB</Text>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: 35,
+        }}>
+        <Image
+          source={require('../assets/Logo.png')}
+          style={{width: 30, height: 30, marginRight: 10}}
+        />
+        <Text style={styles.logo}>SIMS PPOB</Text>
+      </View>
       <Text style={styles.title}>Lengkapi data untuk membuat akun</Text>
 
       <Controller
         control={control}
         name="email"
+        rules={{required: 'Harap diisi'}}
         render={({field: {onChange, value}}) => (
           <TextInput
             placeholder="Masukkan email anda"
@@ -46,6 +99,7 @@ const RegisterScreen = () => {
       <Controller
         control={control}
         name="firstName"
+        rules={{required: 'Harap diisi'}}
         render={({field: {onChange, value}}) => (
           <TextInput
             placeholder="Nama depan"
@@ -59,6 +113,7 @@ const RegisterScreen = () => {
       <Controller
         control={control}
         name="lastName"
+        rules={{required: 'Harap diisi'}}
         render={({field: {onChange, value}}) => (
           <TextInput
             placeholder="Nama belakang"
@@ -72,6 +127,7 @@ const RegisterScreen = () => {
       <Controller
         control={control}
         name="password"
+        rules={{required: 'Harap diisi'}}
         render={({field: {onChange, value}}) => (
           <TextInput
             placeholder="Buat password"
@@ -86,6 +142,7 @@ const RegisterScreen = () => {
       <Controller
         control={control}
         name="confirmPassword"
+        rules={{required: 'Harap diisi'}}
         render={({field: {onChange, value}}) => (
           <TextInput
             placeholder="Konfirmasi password"
@@ -119,14 +176,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   logo: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#D32F2F',
     textAlign: 'center',
-    marginBottom: 10,
   },
   title: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '600',
     textAlign: 'center',
     marginBottom: 20,

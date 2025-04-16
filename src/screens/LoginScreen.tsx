@@ -12,6 +12,10 @@ import {useNavigation} from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
+import API_ENDPOINTS from '../api/api';
+import {useDispatch} from 'react-redux';
+import {loginSuccess} from '../redux/slices/authSlice';
+import {setUserProfile} from '../redux/slices/userSlice';
 
 const LoginScreen = () => {
   const navigation = useNavigation();
@@ -20,6 +24,7 @@ const LoginScreen = () => {
     handleSubmit,
     formState: {errors},
   } = useForm();
+  const dispatch = useDispatch();
 
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -30,31 +35,45 @@ const LoginScreen = () => {
     setErrorMessage('');
 
     try {
-      const response = await axios.post('http://localhost:3000/login', {
+      const response = await axios.post(API_ENDPOINTS.Login, {
         email: data.email,
         password: data.password,
       });
+
+      const token = response.data.data.token;
+      dispatch(loginSuccess(token));
+
       Toast.show({
         type: 'success',
         position: 'bottom',
-        text1: 'Login Berhasil!',
-        text2: 'Selamat datang, Anda berhasil login.',
+        text1: response.data.message,
         visibilityTime: 3000,
       });
 
+      const profileRes = await axios.get(API_ENDPOINTS.Profile, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const profileData = profileRes.data.data;
+      dispatch(setUserProfile(profileData));
+
+      console.log('Profile data:', profileData);
+
       navigation.navigate('main');
     } catch (error) {
-      if (error.response) {
-        setErrorMessage(error.response.data.message || 'Login failed');
-      } else {
-        setErrorMessage('An error occurred. Please try again.');
-      }
+      console.log('Login error:', error);
+
+      const message =
+        error.response?.data?.message ||
+        'Terjadi kesalahan. Silakan coba lagi.';
+      setErrorMessage(message);
 
       Toast.show({
         type: 'error',
         position: 'bottom',
-        text1: 'Login Gagal!',
-        text2: errorMessage || 'Coba lagi nanti.',
+        text1: message,
         visibilityTime: 3000,
       });
     } finally {
@@ -69,7 +88,7 @@ const LoginScreen = () => {
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',
-          marginBottom: 12,
+          marginBottom: 35,
         }}>
         <Image
           source={require('../assets/Logo.png')}
