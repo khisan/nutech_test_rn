@@ -64,7 +64,9 @@ const LoginScreen = () => {
       />
 
       {/* Button */}
-      <TouchableOpacity style={styles.button} onPress={handleSubmit(onSubmit)}>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => navigation.navigate('main')}>
         <Text style={styles.buttonText}>Masuk</Text>
       </TouchableOpacity>
 
