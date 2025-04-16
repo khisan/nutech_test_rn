@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import {useForm, Controller} from 'react-hook-form';
 import {useNavigation} from '@react-navigation/native';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const LoginScreen = () => {
   const navigation = useNavigation();
@@ -19,32 +20,62 @@ const LoginScreen = () => {
   } = useForm();
 
   const onSubmit = data => {
-    console.log(data);
-    // navigation.replace('Home');
+    console.log(data.email);
+    console.log(data.password);
+
+    // Contoh lempar ke login API
+    // loginUser(data.email, data.password);
   };
+
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <View style={styles.container}>
-      {/* Logo */}
-      {/* <Image
-        source={require('../assets/logo.png')} // ganti sesuai path logomu
-        style={styles.logo}
-      /> */}
-
-      <Text style={styles.heading}>SIMS PPOB</Text>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: 12,
+        }}>
+        <Image
+          source={require('../assets/Logo.png')}
+          style={{width: 30, height: 30, marginRight: 10}}
+        />
+        <Text style={styles.heading}>SIMS PPOB</Text>
+      </View>
       <Text style={styles.subheading}>Masuk atau buat akun untuk memulai</Text>
 
       {/* Email input */}
       <Controller
         control={control}
         name="email"
+        rules={{required: 'Harap diisi'}}
         render={({field: {onChange, value}}) => (
-          <TextInput
-            placeholder="Masukkan email anda"
-            style={styles.input}
-            onChangeText={onChange}
-            value={value}
-          />
+          <>
+            <View
+              style={[
+                styles.inputWrapper,
+                errors.email && {borderColor: 'red'},
+              ]}>
+              <MaterialCommunityIcons
+                name="email-outline"
+                size={20}
+                color="#888"
+                style={styles.inputIcon}
+              />
+              <TextInput
+                placeholder="Masukkan email anda"
+                style={styles.inputField}
+                onChangeText={onChange}
+                value={value}
+                keyboardType="email-address"
+              />
+            </View>
+            {errors.email && (
+              <Text style={styles.errorText}>{errors.email.message}</Text>
+            )}
+          </>
         )}
       />
 
@@ -52,21 +83,48 @@ const LoginScreen = () => {
       <Controller
         control={control}
         name="password"
+        rules={{required: 'Harap diisi'}}
         render={({field: {onChange, value}}) => (
-          <TextInput
-            placeholder="Masukkan password anda"
-            secureTextEntry
-            style={styles.input}
-            onChangeText={onChange}
-            value={value}
-          />
+          <>
+            <View
+              style={[
+                styles.inputWrapper,
+                errors.email && {borderColor: 'red'},
+              ]}>
+              <MaterialCommunityIcons
+                name="lock-outline"
+                size={20}
+                color="#888"
+                style={styles.inputIcon}
+              />
+              <TextInput
+                placeholder="Masukkan password anda"
+                secureTextEntry={!showPassword}
+                style={styles.inputField}
+                onChangeText={onChange}
+                value={value}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <MaterialCommunityIcons
+                  name={showPassword ? 'eye-off' : 'eye'}
+                  size={20}
+                  color="#888"
+                />
+              </TouchableOpacity>
+            </View>
+            {errors.password && (
+              <Text style={styles.errorText}>{errors.password.message}</Text>
+            )}
+          </>
         )}
       />
 
       {/* Button */}
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate('main')}>
+        onPress={() => {
+          handleSubmit(onSubmit)();
+        }}>
         <Text style={styles.buttonText}>Masuk</Text>
       </TouchableOpacity>
 
@@ -95,15 +153,15 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     marginBottom: 16,
+    marginRight: 12,
   },
   heading: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#D00000',
-    marginBottom: 8,
+    color: 'greydark',
   },
   subheading: {
-    fontSize: 16,
+    fontSize: 24,
     textAlign: 'center',
     marginBottom: 32,
   },
@@ -135,6 +193,31 @@ const styles = StyleSheet.create({
   link: {
     color: '#D00000',
     fontWeight: 'bold',
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    marginBottom: 16,
+    width: '100%',
+  },
+  inputIcon: {
+    marginRight: 8,
+  },
+  inputField: {
+    flex: 1,
+    height: 40,
+  },
+  errorText: {
+    color: 'red',
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+    marginTop: -12,
+    marginLeft: 4,
+    fontSize: 12,
   },
 });
 
