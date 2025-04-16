@@ -12,6 +12,7 @@ import {useForm, Controller} from 'react-hook-form';
 import {useNavigation} from '@react-navigation/native';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
+import API_ENDPOINTS from '../api/api';
 
 const RegisterScreen = () => {
   const navigation = useNavigation();
@@ -19,6 +20,7 @@ const RegisterScreen = () => {
   const {
     control,
     handleSubmit,
+    watch,
     formState: {errors},
   } = useForm();
 
@@ -30,24 +32,30 @@ const RegisterScreen = () => {
   const onSubmit = async data => {
     setIsLoading(true);
     setErrorMessage('');
+    console.log(data);
 
     try {
-      const response = await axios.post(API_ENDPOINTS.Login, {
+      const response = await axios.post(API_ENDPOINTS.Register, {
         email: data.email,
+        first_name: data.firstName,
+        last_name: data.lastName,
         password: data.password,
       });
       Toast.show({
         type: 'success',
         position: 'bottom',
-        text1: 'Login Berhasil!',
-        text2: 'Selamat datang, Anda berhasil login.',
+        text1: 'Registrasi Berhasil!',
         visibilityTime: 3000,
       });
 
-      navigation.navigate('main');
+      console.log(response.data.message);
+      // navigation.navigate('login');
     } catch (error) {
+      console.log('Error response:', error.response?.data);
+      console.log('Full error:', error);
+
       if (error.response) {
-        setErrorMessage(error.response.data.message || 'Login failed');
+        setErrorMessage(error.response.data.message);
       } else {
         setErrorMessage('An error occurred. Please try again.');
       }
@@ -55,8 +63,8 @@ const RegisterScreen = () => {
       Toast.show({
         type: 'error',
         position: 'bottom',
-        text1: 'Login Gagal!',
-        text2: errorMessage || 'Coba lagi nanti.',
+        text1: 'Registrasi Gagal!',
+        text2: errorMessage,
         visibilityTime: 3000,
       });
     } finally {
@@ -86,13 +94,18 @@ const RegisterScreen = () => {
         name="email"
         rules={{required: 'Harap diisi'}}
         render={({field: {onChange, value}}) => (
-          <TextInput
-            placeholder="Masukkan email anda"
-            style={styles.input}
-            value={value}
-            onChangeText={onChange}
-            autoCapitalize="none"
-          />
+          <>
+            <TextInput
+              placeholder="Masukkan email anda"
+              style={[styles.input, errors.email && {borderColor: 'red'}]}
+              value={value}
+              onChangeText={onChange}
+              autoCapitalize="none"
+            />
+            {errors.email && (
+              <Text style={styles.errorText}>{errors.email.message}</Text>
+            )}
+          </>
         )}
       />
 
@@ -101,12 +114,17 @@ const RegisterScreen = () => {
         name="firstName"
         rules={{required: 'Harap diisi'}}
         render={({field: {onChange, value}}) => (
-          <TextInput
-            placeholder="Nama depan"
-            style={styles.input}
-            value={value}
-            onChangeText={onChange}
-          />
+          <>
+            <TextInput
+              placeholder="Nama depan"
+              style={[styles.input, errors.firstName && {borderColor: 'red'}]}
+              value={value}
+              onChangeText={onChange}
+            />
+            {errors.firstName && (
+              <Text style={styles.errorText}>{errors.firstName.message}</Text>
+            )}
+          </>
         )}
       />
 
@@ -115,47 +133,79 @@ const RegisterScreen = () => {
         name="lastName"
         rules={{required: 'Harap diisi'}}
         render={({field: {onChange, value}}) => (
-          <TextInput
-            placeholder="Nama belakang"
-            style={styles.input}
-            value={value}
-            onChangeText={onChange}
-          />
+          <>
+            <TextInput
+              placeholder="Nama belakang"
+              style={[styles.input, errors.lastName && {borderColor: 'red'}]}
+              value={value}
+              onChangeText={onChange}
+            />
+            {errors.lastName && (
+              <Text style={styles.errorText}>{errors.lastName.message}</Text>
+            )}
+          </>
         )}
       />
 
       <Controller
         control={control}
         name="password"
-        rules={{required: 'Harap diisi'}}
+        rules={{
+          required: 'Harap diisi',
+          minLength: {
+            value: 8,
+            message: 'Password minimal 8 karakter',
+          },
+        }}
         render={({field: {onChange, value}}) => (
-          <TextInput
-            placeholder="Buat password"
-            style={styles.input}
-            value={value}
-            onChangeText={onChange}
-            secureTextEntry
-          />
+          <>
+            <TextInput
+              placeholder="Buat password"
+              style={[styles.input, errors.password && {borderColor: 'red'}]}
+              value={value}
+              onChangeText={onChange}
+              secureTextEntry
+            />
+            {errors.password && (
+              <Text style={styles.errorText}>{errors.password.message}</Text>
+            )}
+          </>
         )}
       />
 
       <Controller
         control={control}
         name="confirmPassword"
-        rules={{required: 'Harap diisi'}}
+        rules={{
+          required: 'Harap diisi',
+          validate: value =>
+            value === watch('password') || 'Password tidak cocok',
+        }}
         render={({field: {onChange, value}}) => (
-          <TextInput
-            placeholder="Konfirmasi password"
-            style={styles.input}
-            value={value}
-            onChangeText={onChange}
-            secureTextEntry
-          />
+          <>
+            <TextInput
+              placeholder="Konfirmasi password"
+              style={[
+                styles.input,
+                errors.confirmPassword && {borderColor: 'red'},
+              ]}
+              value={value}
+              onChangeText={onChange}
+              secureTextEntry
+            />
+            {errors.confirmPassword && (
+              <Text style={styles.errorText}>
+                {errors.confirmPassword.message}
+              </Text>
+            )}
+          </>
         )}
       />
 
       <TouchableOpacity style={styles.button} onPress={handleSubmit(onSubmit)}>
-        <Text style={styles.buttonText}>Registrasi</Text>
+        <Text style={styles.buttonText}>
+          {isLoading ? 'Loading...' : 'Registrasi'}
+        </Text>
       </TouchableOpacity>
 
       <Text style={styles.bottomText}>
@@ -164,6 +214,7 @@ const RegisterScreen = () => {
           login di sini
         </Text>
       </Text>
+      <Toast />
     </ScrollView>
   );
 };
@@ -213,6 +264,14 @@ const styles = StyleSheet.create({
   link: {
     color: '#E53935',
     fontWeight: 'bold',
+  },
+  errorText: {
+    color: 'red',
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+    marginTop: -12,
+    marginLeft: 4,
+    fontSize: 12,
   },
 });
 
