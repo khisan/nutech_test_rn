@@ -18,12 +18,14 @@ import axios from 'axios';
 import API_ENDPOINTS from '../api/api';
 import {useDispatch} from 'react-redux';
 import {fetchUserProfile} from '../redux/actions/fetchUser';
+import {requestGalleryPermission} from '../utils/permssionGalery';
 
 const ProfileScreen = () => {
   const profile = useSelector(state => state.user.profile);
   const token = useSelector(state => state.auth.token);
   const [localImageUri, setLocalImageUri] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const dispatch = useDispatch();
   const {
     control,
@@ -42,7 +44,17 @@ const ProfileScreen = () => {
     }
   }, [profile, reset]);
 
-  const pickImage = () => {
+  const pickImage = async () => {
+    const hasPermission = await requestGalleryPermission();
+    if (!hasPermission) {
+      Toast.show({
+        type: 'error',
+        text1: 'Izin ditolak',
+        text2: 'Tidak bisa mengakses galeri tanpa izin',
+      });
+      return;
+    }
+
     const options = {
       mediaType: 'photo',
       includeBase64: false,
@@ -59,17 +71,27 @@ const ProfileScreen = () => {
       } else if (response.assets && response.assets.length > 0) {
         const selectedImage = response.assets[0];
         const fileType = selectedImage.type;
+        const fileSize = selectedImage.fileSize;
 
-        if (fileType === 'image/jpeg' || fileType === 'image/png') {
-          console.log('Selected image:', selectedImage.uri);
-          setLocalImageUri(selectedImage.uri);
-        } else {
+        if (fileType !== 'image/jpeg' && fileType !== 'image/png') {
           Toast.show({
             type: 'error',
             text1: 'Error',
             text2: 'Hanya file JPG atau PNG yang diperbolehkan',
           });
+          return;
         }
+
+        if (fileSize > 100 * 1024) {
+          Toast.show({
+            type: 'error',
+            text1: 'Ukuran gambar terlalu besar',
+            text2: 'Ukuran maksimum adalah 100KB',
+          });
+          return;
+        }
+
+        setLocalImageUri(selectedImage.uri);
       }
     });
   };
@@ -82,8 +104,6 @@ const ProfileScreen = () => {
     const isNameChanged =
       firstName !== profile.first_name || lastName !== profile.last_name;
     const isImageChanged = !!localImageUri;
-
-    console.log('terjalankan');
 
     try {
       if (isNameChanged && !isImageChanged) {
@@ -99,12 +119,6 @@ const ProfileScreen = () => {
             },
           },
         );
-        dispatch(fetchUserProfile());
-        Toast.show({
-          type: 'success',
-          text1: 'Berhasil',
-          text2: 'Profil berhasil diperbarui',
-        });
       } else if (!isNameChanged && isImageChanged) {
         formData.append('file', {
           uri: localImageUri,
@@ -117,12 +131,6 @@ const ProfileScreen = () => {
             'Content-Type': 'multipart/form-data',
             Authorization: `Bearer ${token}`,
           },
-        });
-        dispatch(fetchUserProfile());
-        Toast.show({
-          type: 'success',
-          text1: 'Berhasil',
-          text2: 'Foto profil berhasil diperbarui',
         });
       } else if (isNameChanged && isImageChanged) {
         await Promise.all([
@@ -157,12 +165,6 @@ const ProfileScreen = () => {
             },
           ),
         ]);
-        dispatch(fetchUserProfile());
-        Toast.show({
-          type: 'success',
-          text1: 'Berhasil',
-          text2: 'Profil dan foto berhasil diperbarui',
-        });
       } else {
         Toast.show({
           type: 'info',
@@ -170,6 +172,14 @@ const ProfileScreen = () => {
           text2: 'Tidak ada perubahan',
         });
       }
+
+      dispatch(fetchUserProfile());
+      setIsEditing(false);
+      Toast.show({
+        type: 'success',
+        text1: 'Berhasil',
+        text2: 'Data berhasil diperbarui',
+      });
     } catch (error) {
       console.error('Update error: ', error);
       Toast.show({
@@ -180,6 +190,20 @@ const ProfileScreen = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleCancel = () => {
+    reset({
+      firstName: profile.first_name,
+      lastName: profile.last_name,
+      email: profile.email,
+    });
+    setLocalImageUri(null);
+    setIsEditing(false);
+  };
+
+  const handleEdit = () => {
+    setIsEditing(true);
   };
 
   return (
@@ -203,7 +227,10 @@ const ProfileScreen = () => {
             }
             style={styles.avatar}
           />
-          <TouchableOpacity style={styles.editIcon} onPress={pickImage}>
+          <TouchableOpacity
+            style={styles.editIcon}
+            onPress={isEditing ? pickImage : null}
+            disabled={!isEditing}>
             <Icon name="edit" size={16} color="#000" />
           </TouchableOpacity>
         </View>
@@ -238,6 +265,7 @@ const ProfileScreen = () => {
                   onChangeText={onChange}
                   value={value}
                   keyboardType="email-address"
+                  editable={isEditing}
                 />
               </View>
               {errors.email && (
@@ -271,6 +299,7 @@ const ProfileScreen = () => {
                   onChangeText={onChange}
                   value={value}
                   keyboardType="default"
+                  editable={isEditing}
                 />
               </View>
               {errors.firstName && (
@@ -304,6 +333,7 @@ const ProfileScreen = () => {
                   onChangeText={onChange}
                   value={value}
                   keyboardType="default"
+                  editable={isEditing}
                 />
               </View>
               {errors.lastName && (
@@ -313,16 +343,31 @@ const ProfileScreen = () => {
           )}
         />
 
-        <TouchableOpacity
-          style={styles.editButton}
-          onPress={handleSubmit(onSubmit)}>
-          <Text style={styles.editButtonText}>
-            {isLoading ? 'Loading...' : 'Edit Profile'}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.logoutButton}>
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
+        {isEditing ? (
+          <>
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={handleSubmit(onSubmit)}>
+              <Text style={styles.editButtonText}>
+                {isLoading ? 'Loading...' : 'Simpan'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleCancel}>
+              <Text style={styles.logoutText}>Batalkan</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
+              <Text style={styles.editButtonText}>Edit Profil</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.logoutButton}>
+              <Text style={styles.logoutText}>Logout</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
       <Toast position="top" topOffset={60} />
     </View>
