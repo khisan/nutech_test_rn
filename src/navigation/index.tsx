@@ -2,8 +2,7 @@ import React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
 import HomeScreen from '../screens/HomeScreen';
@@ -25,20 +24,24 @@ function BottomTabs() {
         tabBarIcon: ({color, size}) => {
           const icons = {
             Home: 'home-outline',
-            Transaksi: 'swap-horizontal-outline',
-            Riwayat: 'time-outline',
-            Profile: 'person-outline',
+            TopUp: 'swap-horizontal',
+            Transaksi: 'clock-time-four-outline',
+            Akun: 'account-outline',
           };
 
           return (
-            <Ionicons name={icons[route.name]} size={size} color={color} />
+            <MaterialCommunityIcons
+              name={icons[route.name]}
+              size={size}
+              color={color}
+            />
           );
         },
         tabBarActiveTintColor: '#e11d48',
         tabBarInactiveTintColor: 'gray',
       })}>
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Top Up" component={TopUpScreen} />
+      <Tab.Screen name="TopUp" component={TopUpScreen} />
       <Tab.Screen name="Transaksi" component={TransactionScreen} />
       <Tab.Screen name="Akun" component={AccountScreen} />
     </Tab.Navigator>

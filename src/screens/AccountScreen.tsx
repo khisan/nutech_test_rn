@@ -1,4 +1,5 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
+import {Controller, useForm} from 'react-hook-form';
 import {
   View,
   Text,
@@ -8,61 +9,164 @@ import {
   StyleSheet,
   SafeAreaView,
 } from 'react-native';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import {useSelector} from 'react-redux';
 
 const ProfileScreen = () => {
-  const [firstName, setFirstName] = useState('Kristanto');
-  const [lastName, setLastName] = useState('Wibowo');
-  const [email, setEmail] = useState('wallet@nutech.com');
+  const profile = useSelector(state => state.user.profile);
+  console.log('Profile data:', profile);
+  console.log('Profile email:', profile.email);
+  // const [firstName, setFirstName] = useState('Kristanto');
+  // const [lastName, setLastName] = useState('Wibowo');
+  // const [email, setEmail] = useState('wallet@nutech.com');
+  const {
+    control,
+    handleSubmit,
+    formState: {errors},
+    reset,
+  } = useForm();
+
+  useEffect(() => {
+    if (profile) {
+      reset({
+        firstName: profile.first_name,
+        lastName: profile.last_name,
+        email: profile.email,
+      });
+    }
+  }, [profile, reset]);
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.sideButton}>
           <Text style={styles.backText}>←</Text>
         </TouchableOpacity>
-
         <Text style={styles.headerTitle}>Akun</Text>
-
-        {/* Spacer sama lebar dengan tombol di kiri biar seimbang */}
         <View style={styles.sideButton} />
       </View>
-
-      {/* Profile Image */}
       <View style={styles.profileContainer}>
-        <Image
-          // source={require('./assets/avatar.png')} // Ganti sesuai path avatar
-          style={styles.avatar}
-        />
-        <View style={styles.editIcon}>
-          <Icon name="edit" size={16} color="#000" />
+        <View style={styles.avatarWrapper}>
+          {profile.image ? (
+            <Image
+              source={{uri: profile.profile_image}}
+              style={styles.avatar}
+            />
+          ) : (
+            <Image
+              source={require('../assets/Profile_Photo-1.png')}
+              style={styles.avatar}
+            />
+          )}
+          <View style={styles.editIcon}>
+            <Icon name="edit" size={16} color="#000" />
+          </View>
         </View>
         <Text style={styles.nameText}>
-          {firstName} {lastName}
+          {profile.first_name} {profile.last_name}
         </Text>
       </View>
 
       {/* Form */}
       <View style={styles.form}>
         <Text style={styles.label}>Email</Text>
-        <View style={styles.inputWrapper}>
-          <Icon name="email" size={20} color="#888" style={styles.icon} />
-          <TextInput value={email} editable={false} style={styles.input} />
-        </View>
+        <Controller
+          control={control}
+          name="email"
+          rules={{required: 'Harap diisi'}}
+          render={({field: {onChange, value}}) => (
+            <>
+              <View
+                style={[
+                  styles.inputWrapper,
+                  errors.email && {borderColor: 'red'},
+                ]}>
+                <MaterialCommunityIcons
+                  name="email-outline"
+                  size={20}
+                  color="#888"
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  placeholder="Masukkan email anda"
+                  style={styles.inputField}
+                  onChangeText={onChange}
+                  value={value}
+                  keyboardType="email-address"
+                />
+              </View>
+              {errors.email && (
+                <Text style={styles.errorText}>{errors.email.message}</Text>
+              )}
+            </>
+          )}
+        />
 
         <Text style={styles.label}>Nama Depan</Text>
-        <TextInput
-          value={firstName}
-          onChangeText={setFirstName}
-          style={styles.inputBox}
+        <Controller
+          control={control}
+          name="firstName"
+          rules={{required: 'Harap diisi'}}
+          render={({field: {onChange, value}}) => (
+            <>
+              <View
+                style={[
+                  styles.inputWrapper,
+                  errors.firstName && {borderColor: 'red'},
+                ]}>
+                <MaterialCommunityIcons
+                  name="account-outline"
+                  size={20}
+                  color="#888"
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  placeholder="Nama depan"
+                  style={styles.inputField}
+                  onChangeText={onChange}
+                  value={value}
+                  keyboardType="default"
+                />
+              </View>
+              {errors.firstName && (
+                <Text style={styles.errorText}>{errors.firstName.message}</Text>
+              )}
+            </>
+          )}
         />
 
         <Text style={styles.label}>Nama Belakang</Text>
-        <TextInput
-          value={lastName}
-          onChangeText={setLastName}
-          style={styles.inputBox}
+        <Controller
+          control={control}
+          name="lastName"
+          rules={{required: 'Harap diisi'}}
+          render={({field: {onChange, value}}) => (
+            <>
+              <View
+                style={[
+                  styles.inputWrapper,
+                  errors.firstName && {borderColor: 'red'},
+                ]}>
+                <MaterialCommunityIcons
+                  name="account-outline"
+                  size={20}
+                  color="#888"
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  placeholder="Nama belakang"
+                  style={styles.inputField}
+                  onChangeText={onChange}
+                  value={value}
+                  keyboardType="default"
+                />
+              </View>
+              {errors.lastName && (
+                <Text style={styles.errorText}>{errors.lastName.message}</Text>
+              )}
+            </>
+          )}
         />
 
         <TouchableOpacity style={styles.editButton}>
@@ -102,22 +206,28 @@ const styles = StyleSheet.create({
   },
   profileContainer: {
     alignItems: 'center',
-    marginVertical: 20,
+    marginVertical: 10,
   },
   avatar: {
     width: 90,
     height: 90,
     borderRadius: 45,
   },
+  avatarWrapper: {
+    position: 'relative',
+    width: 90,
+    height: 90,
+  },
   editIcon: {
     position: 'absolute',
-    bottom: 10,
-    right: 10,
+    bottom: 0,
+    right: 0,
     backgroundColor: '#fff',
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 4,
     elevation: 2,
   },
+
   nameText: {
     marginTop: 12,
     fontSize: 18,
@@ -128,16 +238,20 @@ const styles = StyleSheet.create({
   },
   label: {
     marginTop: 10,
-    marginBottom: 4,
+    marginBottom: 10,
     fontSize: 14,
     color: '#333',
+    fontWeight: '500',
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f2f2f2',
+    borderWidth: 1,
+    borderColor: '#ddd',
     borderRadius: 8,
     paddingHorizontal: 10,
+    paddingVertical: 10,
+    marginBottom: 16,
   },
   icon: {
     marginRight: 6,
@@ -156,9 +270,10 @@ const styles = StyleSheet.create({
     marginTop: 20,
     borderWidth: 1,
     borderColor: '#e53935',
-    paddingVertical: 10,
+    paddingVertical: 15,
     borderRadius: 8,
     alignItems: 'center',
+    marginBottom: 10,
   },
   editButtonText: {
     color: '#e53935',
@@ -167,12 +282,19 @@ const styles = StyleSheet.create({
   logoutButton: {
     marginTop: 15,
     backgroundColor: '#e53935',
-    paddingVertical: 12,
+    paddingVertical: 15,
     borderRadius: 8,
     alignItems: 'center',
   },
   logoutText: {
     color: '#fff',
     fontWeight: '600',
+  },
+  inputIcon: {
+    marginRight: 8,
+  },
+  inputField: {
+    flex: 1,
+    height: 40,
   },
 });
