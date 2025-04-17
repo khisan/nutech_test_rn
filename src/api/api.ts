@@ -7,6 +7,7 @@ const API_ENDPOINTS = {
   Services: `${BASE_URL}/services`,
   Banner: `${BASE_URL}/banner`,
   Balance: `${BASE_URL}/balance`,
+  TopUp: `${BASE_URL}/topup`,
 };
 
 export default API_ENDPOINTS;
