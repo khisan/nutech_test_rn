@@ -19,6 +19,8 @@ import API_ENDPOINTS from '../api/api';
 import {useDispatch} from 'react-redux';
 import {fetchUserProfile} from '../redux/actions/fetchUser';
 import {requestGalleryPermission} from '../utils/permssionGalery';
+import {useNavigation} from '@react-navigation/native';
+import {logout} from '../redux/slices/authSlice';
 
 const ProfileScreen = () => {
   const profile = useSelector(state => state.user.profile);
@@ -206,6 +208,20 @@ const ProfileScreen = () => {
     setIsEditing(true);
   };
 
+  const navigation = useNavigation();
+
+  const handleLogout = () => {
+    dispatch(logout());
+    Toast.show({
+      type: 'success',
+      text1: 'Logout berhasil',
+    });
+    navigation.reset({
+      index: 0,
+      routes: [{name: 'login'}],
+    });
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -363,7 +379,9 @@ const ProfileScreen = () => {
             <TouchableOpacity style={styles.editButton} onPress={handleEdit}>
               <Text style={styles.editButtonText}>Edit Profil</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.logoutButton}>
+            <TouchableOpacity
+              style={styles.logoutButton}
+              onPress={handleLogout}>
               <Text style={styles.logoutText}>Logout</Text>
             </TouchableOpacity>
           </>
