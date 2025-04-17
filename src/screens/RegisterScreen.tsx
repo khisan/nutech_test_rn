@@ -13,6 +13,7 @@ import {useNavigation} from '@react-navigation/native';
 import axios from 'axios';
 import Toast from 'react-native-toast-message';
 import API_ENDPOINTS from '../api/api';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const RegisterScreen = () => {
   const navigation = useNavigation();
@@ -45,15 +46,13 @@ const RegisterScreen = () => {
         type: 'success',
         position: 'bottom',
         text1: 'Registrasi Berhasil!',
+        text2: 'Silahkan Login',
         visibilityTime: 3000,
       });
 
       console.log(response.data.message);
-      // navigation.navigate('login');
     } catch (error) {
       console.log('Error response:', error.response?.data);
-      console.log('Full error:', error);
-
       if (error.response) {
         setErrorMessage(error.response.data.message);
       } else {
@@ -74,17 +73,8 @@ const RegisterScreen = () => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: 35,
-        }}>
-        <Image
-          source={require('../assets/Logo.png')}
-          style={{width: 30, height: 30, marginRight: 10}}
-        />
+      <View style={styles.logoContainer}>
+        <Image source={require('../assets/Logo.png')} style={styles.logoImg} />
         <Text style={styles.logo}>SIMS PPOB</Text>
       </View>
       <Text style={styles.title}>Lengkapi data untuk membuat akun</Text>
@@ -95,13 +85,24 @@ const RegisterScreen = () => {
         rules={{required: 'Harap diisi'}}
         render={({field: {onChange, value}}) => (
           <>
-            <TextInput
-              placeholder="Masukkan email anda"
-              style={[styles.input, errors.email && {borderColor: 'red'}]}
-              value={value}
-              onChangeText={onChange}
-              autoCapitalize="none"
-            />
+            <View
+              style={[
+                styles.inputContainer,
+                errors.email && {borderColor: 'red'},
+              ]}>
+              <MaterialCommunityIcons
+                name="email-outline"
+                size={20}
+                color="#888"
+              />
+              <TextInput
+                placeholder="Masukkan email anda"
+                style={styles.textInput}
+                value={value}
+                onChangeText={onChange}
+                autoCapitalize="none"
+              />
+            </View>
             {errors.email && (
               <Text style={styles.errorText}>{errors.email.message}</Text>
             )}
@@ -115,12 +116,23 @@ const RegisterScreen = () => {
         rules={{required: 'Harap diisi'}}
         render={({field: {onChange, value}}) => (
           <>
-            <TextInput
-              placeholder="Nama depan"
-              style={[styles.input, errors.firstName && {borderColor: 'red'}]}
-              value={value}
-              onChangeText={onChange}
-            />
+            <View
+              style={[
+                styles.inputContainer,
+                errors.firstName && {borderColor: 'red'},
+              ]}>
+              <MaterialCommunityIcons
+                name="account-outline"
+                size={20}
+                color="#888"
+              />
+              <TextInput
+                placeholder="Nama depan"
+                style={styles.textInput}
+                value={value}
+                onChangeText={onChange}
+              />
+            </View>
             {errors.firstName && (
               <Text style={styles.errorText}>{errors.firstName.message}</Text>
             )}
@@ -134,12 +146,23 @@ const RegisterScreen = () => {
         rules={{required: 'Harap diisi'}}
         render={({field: {onChange, value}}) => (
           <>
-            <TextInput
-              placeholder="Nama belakang"
-              style={[styles.input, errors.lastName && {borderColor: 'red'}]}
-              value={value}
-              onChangeText={onChange}
-            />
+            <View
+              style={[
+                styles.inputContainer,
+                errors.lastName && {borderColor: 'red'},
+              ]}>
+              <MaterialCommunityIcons
+                name="account-outline"
+                size={20}
+                color="#888"
+              />
+              <TextInput
+                placeholder="Nama belakang"
+                style={styles.textInput}
+                value={value}
+                onChangeText={onChange}
+              />
+            </View>
             {errors.lastName && (
               <Text style={styles.errorText}>{errors.lastName.message}</Text>
             )}
@@ -152,20 +175,35 @@ const RegisterScreen = () => {
         name="password"
         rules={{
           required: 'Harap diisi',
-          minLength: {
-            value: 8,
-            message: 'Password minimal 8 karakter',
-          },
+          minLength: {value: 8, message: 'Password minimal 8 karakter'},
         }}
         render={({field: {onChange, value}}) => (
           <>
-            <TextInput
-              placeholder="Buat password"
-              style={[styles.input, errors.password && {borderColor: 'red'}]}
-              value={value}
-              onChangeText={onChange}
-              secureTextEntry
-            />
+            <View
+              style={[
+                styles.inputContainer,
+                errors.password && {borderColor: 'red'},
+              ]}>
+              <MaterialCommunityIcons
+                name="lock-outline"
+                size={20}
+                color="#888"
+              />
+              <TextInput
+                placeholder="Buat password"
+                style={styles.textInput}
+                value={value}
+                onChangeText={onChange}
+                secureTextEntry={!showPassword}
+              />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <MaterialCommunityIcons
+                  name={showPassword ? 'eye-off' : 'eye'}
+                  size={20}
+                  color="#888"
+                />
+              </TouchableOpacity>
+            </View>
             {errors.password && (
               <Text style={styles.errorText}>{errors.password.message}</Text>
             )}
@@ -183,16 +221,32 @@ const RegisterScreen = () => {
         }}
         render={({field: {onChange, value}}) => (
           <>
-            <TextInput
-              placeholder="Konfirmasi password"
+            <View
               style={[
-                styles.input,
+                styles.inputContainer,
                 errors.confirmPassword && {borderColor: 'red'},
-              ]}
-              value={value}
-              onChangeText={onChange}
-              secureTextEntry
-            />
+              ]}>
+              <MaterialCommunityIcons
+                name="lock-check-outline"
+                size={20}
+                color="#888"
+              />
+              <TextInput
+                placeholder="Konfirmasi password"
+                style={styles.textInput}
+                value={value}
+                onChangeText={onChange}
+                secureTextEntry={!showConfirmPassword}
+              />
+              <TouchableOpacity
+                onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+                <MaterialCommunityIcons
+                  name={showConfirmPassword ? 'eye-off' : 'eye'}
+                  size={20}
+                  color="#888"
+                />
+              </TouchableOpacity>
+            </View>
             {errors.confirmPassword && (
               <Text style={styles.errorText}>
                 {errors.confirmPassword.message}
@@ -226,10 +280,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#fff',
   },
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 35,
+  },
+  logoImg: {
+    width: 30,
+    height: 30,
+    marginRight: 10,
+  },
   logo: {
-    fontSize: 20,
+    fontSize: 23,
     fontWeight: 'bold',
-    textAlign: 'center',
   },
   title: {
     fontSize: 24,
@@ -238,12 +302,29 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     color: '#000',
   },
-  input: {
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#ddd',
     borderRadius: 8,
-    padding: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16,
+  },
+  textInput: {
+    flex: 1,
+    fontSize: 14,
+    marginLeft: 8,
+    color: '#000',
+  },
+  errorText: {
+    color: 'red',
+    alignSelf: 'flex-start',
     marginBottom: 12,
+    marginTop: -12,
+    marginLeft: 4,
+    fontSize: 12,
   },
   button: {
     backgroundColor: '#E53935',
@@ -264,14 +345,6 @@ const styles = StyleSheet.create({
   link: {
     color: '#E53935',
     fontWeight: 'bold',
-  },
-  errorText: {
-    color: 'red',
-    alignSelf: 'flex-start',
-    marginBottom: 12,
-    marginTop: -12,
-    marginLeft: 4,
-    fontSize: 12,
   },
 });
 

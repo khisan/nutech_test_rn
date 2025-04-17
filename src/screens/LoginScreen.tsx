@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   heading: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: 'bold',
     color: 'greydark',
   },
@@ -214,6 +214,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 12,
     marginBottom: 16,
+    paddingVertical: 10,
     width: '100%',
   },
   inputIcon: {
