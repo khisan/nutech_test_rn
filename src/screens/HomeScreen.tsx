@@ -7,10 +7,12 @@ import {
   Image,
   TouchableOpacity,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import {useSelector} from 'react-redux';
 import axios from 'axios';
 import API_ENDPOINTS from '../api/api';
+import {useNavigation} from '@react-navigation/native';
 
 export default function HomeScreen() {
   const profile = useSelector(state => state.user.profile);
@@ -21,69 +23,69 @@ export default function HomeScreen() {
   const [loadingBanner, setLoadingBanner] = useState(true);
   const [balance, setBalance] = useState(null);
   const [showBalance, setShowBalance] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    axios
-      .get(API_ENDPOINTS.Services, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      .then(response => {
-        if (response.data.status === 0) {
-          setServices(response.data.data);
+  const fetchAllData = () => {
+    setRefreshing(true);
+    setLoading(true);
+    setLoadingBanner(true);
+
+    const fetchServices = axios.get(API_ENDPOINTS.Services, {
+      headers: {Authorization: `Bearer ${token}`},
+    });
+
+    const fetchBanners = axios.get(API_ENDPOINTS.Banner, {
+      headers: {Authorization: `Bearer ${token}`},
+    });
+
+    const fetchBalance = axios.get(API_ENDPOINTS.Balance, {
+      headers: {Authorization: `Bearer ${token}`},
+    });
+
+    Promise.all([fetchServices, fetchBanners, fetchBalance])
+      .then(([resServices, resBanners, resBalance]) => {
+        if (resServices.data.status === 0) {
+          setServices(resServices.data.data);
+        }
+
+        if (resBanners.data.status === 0) {
+          setBanners(resBanners.data.data);
+        }
+
+        if (resBalance.data.status === 0) {
+          setBalance(resBalance.data.data.balance);
         }
       })
       .catch(error => {
-        console.error('Error fetching services:', error);
+        console.error('Error during refresh:', error);
       })
       .finally(() => {
         setLoading(false);
-      });
-
-    axios
-      .get(API_ENDPOINTS.Banner, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      .then(response => {
-        if (response.data.status === 0) {
-          setBanners(response.data.data);
-        }
-      })
-      .catch(error => {
-        console.error('Error fetching banners:', error);
-      })
-      .finally(() => {
         setLoadingBanner(false);
+        setRefreshing(false);
       });
+  };
 
-    axios
-      .get(API_ENDPOINTS.Balance, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      .then(response => {
-        if (response.data.status === 0) {
-          setBalance(response.data.data.balance);
-        }
-      })
-      .catch(error => {
-        console.error('Error fetching balance:', error);
-      });
+  useEffect(() => {
+    fetchAllData();
   }, []);
 
   const toggleShowBalance = () => {
     setShowBalance(prev => !prev);
   };
 
+  console.log('services:', services);
+
+  const navigation = useNavigation();
+
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={{paddingBottom: '15%'}}
-      showsVerticalScrollIndicator={false}>
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={fetchAllData} />
+      }>
       <View style={styles.header}>
         <View style={{flexDirection: 'row', alignItems: 'center'}}>
           <Image
@@ -126,7 +128,12 @@ export default function HomeScreen() {
           <ActivityIndicator size="large" color="#e11d48" />
         ) : (
           services.map((service, index) => (
-            <TouchableOpacity key={index} style={styles.gridItem}>
+            <TouchableOpacity
+              key={index}
+              style={styles.gridItem}
+              onPress={() => {
+                navigation.navigate('payment', {service});
+              }}>
               <Image
                 source={{uri: service.service_icon}}
                 style={{width: 40, height: 40, marginBottom: 6}}

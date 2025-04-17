@@ -9,6 +9,7 @@ import HomeScreen from '../screens/HomeScreen';
 import TopUpScreen from '../screens/TopUpScreen';
 import TransactionScreen from '../screens/TransactionScreen';
 import AccountScreen from '../screens/AccountScreen';
+import PaymentScreen from '../screens/PaymentScreen';
 // import TransaksiScreen from '../screens/TransaksiScreen'; // pastikan file ini ada
 // import RiwayatScreen from '../screens/RiwayatScreen'; // pastikan file ini ada
 // import ProfileScreen from '../screens/ProfileScreen'; // pastikan file ini ada
@@ -65,6 +66,11 @@ export default function AppNavigator() {
         <Stack.Screen
           name="main"
           component={BottomTabs}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="payment"
+          component={PaymentScreen}
           options={{headerShown: false}}
         />
       </Stack.Navigator>

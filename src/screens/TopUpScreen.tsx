@@ -13,6 +13,7 @@ import API_ENDPOINTS from '../api/api';
 import axios from 'axios';
 import {useSelector} from 'react-redux';
 import Toast from 'react-native-toast-message';
+import {useNavigation} from '@react-navigation/native';
 
 const nominalOptions = [10000, 20000, 50000, 100000, 250000, 500000];
 
@@ -33,6 +34,22 @@ const TopUpScreen = () => {
       setError('Maksimum top up adalah Rp1.000.000');
     } else {
       setError('');
+    }
+  };
+
+  const getBalance = async () => {
+    try {
+      const response = await axios.get(API_ENDPOINTS.Balance, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.data.status === 0) {
+        setBalance(response.data.data.balance);
+      }
+    } catch (error) {
+      console.error('Error fetching balance:', error);
     }
   };
 
@@ -73,30 +90,21 @@ const TopUpScreen = () => {
     }
   };
 
-  const getBalance = async () => {
-    try {
-      const response = await axios.get(API_ENDPOINTS.Balance, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.data.status === 0) {
-        setBalance(response.data.data.balance);
-      }
-    } catch (error) {
-      console.error('Error fetching balance:', error);
-    }
-  };
-
   useEffect(() => {
     getBalance();
   }, []);
 
+  const navigation = useNavigation();
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Icon name="arrow-back" size={24} />
+        <TouchableOpacity
+          style={styles.sideButton}
+          onPress={() => navigation.goBack()}>
+          <MaterialCommunityIcons name="arrow-left" size={20} color="#000" />
+          <Text style={styles.backText}>Kembali</Text>
+        </TouchableOpacity>
         <Text style={styles.headerText}>Top Up</Text>
         <View style={{width: 24}} />
       </View>
@@ -201,6 +209,11 @@ const styles = StyleSheet.create({
   headerText: {
     fontSize: 18,
     fontWeight: 'bold',
+    textAlign: 'center',
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 1,
   },
   card: {
     backgroundColor: '#dc2626',
@@ -287,5 +300,17 @@ const styles = StyleSheet.create({
   errorText: {
     color: 'red',
     marginBottom: 10,
+  },
+  sideButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 3,
+    paddingVertical: 5,
+    zIndex: 2,
+  },
+  backText: {
+    fontSize: 16,
+    marginLeft: 6,
+    color: '#000',
   },
 });
