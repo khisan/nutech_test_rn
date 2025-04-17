@@ -12,14 +12,19 @@ import {
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import {useSelector} from 'react-redux';
+import {launchImageLibrary} from 'react-native-image-picker';
+import Toast from 'react-native-toast-message';
+import axios from 'axios';
+import API_ENDPOINTS from '../api/api';
+import {useDispatch} from 'react-redux';
+import {fetchUserProfile} from '../redux/actions/fetchUser';
 
 const ProfileScreen = () => {
   const profile = useSelector(state => state.user.profile);
-  console.log('Profile data:', profile);
-  console.log('Profile email:', profile.email);
-  // const [firstName, setFirstName] = useState('Kristanto');
-  // const [lastName, setLastName] = useState('Wibowo');
-  // const [email, setEmail] = useState('wallet@nutech.com');
+  const token = useSelector(state => state.auth.token);
+  const [localImageUri, setLocalImageUri] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const dispatch = useDispatch();
   const {
     control,
     handleSubmit,
@@ -37,6 +42,146 @@ const ProfileScreen = () => {
     }
   }, [profile, reset]);
 
+  const pickImage = () => {
+    const options = {
+      mediaType: 'photo',
+      includeBase64: false,
+      maxHeight: 600,
+      maxWidth: 600,
+      selectionLimit: 1,
+    };
+
+    launchImageLibrary(options, response => {
+      if (response.didCancel) {
+        console.log('User cancelled image picker');
+      } else if (response.errorCode) {
+        console.log('ImagePicker Error: ', response.errorMessage);
+      } else if (response.assets && response.assets.length > 0) {
+        const selectedImage = response.assets[0];
+        const fileType = selectedImage.type;
+
+        if (fileType === 'image/jpeg' || fileType === 'image/png') {
+          console.log('Selected image:', selectedImage.uri);
+          setLocalImageUri(selectedImage.uri);
+        } else {
+          Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: 'Hanya file JPG atau PNG yang diperbolehkan',
+          });
+        }
+      }
+    });
+  };
+
+  const onSubmit = async data => {
+    setIsLoading(true);
+    const {firstName, lastName, email} = data;
+    const formData = new FormData();
+
+    const isNameChanged =
+      firstName !== profile.first_name || lastName !== profile.last_name;
+    const isImageChanged = !!localImageUri;
+
+    console.log('terjalankan');
+
+    try {
+      if (isNameChanged && !isImageChanged) {
+        await axios.put(
+          `${API_ENDPOINTS.Profile}/update`,
+          {
+            first_name: firstName,
+            last_name: lastName,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+        dispatch(fetchUserProfile());
+        Toast.show({
+          type: 'success',
+          text1: 'Berhasil',
+          text2: 'Profil berhasil diperbarui',
+        });
+      } else if (!isNameChanged && isImageChanged) {
+        formData.append('file', {
+          uri: localImageUri,
+          name: 'profile.jpg',
+          type: 'image/jpeg',
+        });
+
+        await axios.put(`${API_ENDPOINTS.Profile}/image`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        dispatch(fetchUserProfile());
+        Toast.show({
+          type: 'success',
+          text1: 'Berhasil',
+          text2: 'Foto profil berhasil diperbarui',
+        });
+      } else if (isNameChanged && isImageChanged) {
+        await Promise.all([
+          axios.put(
+            `${API_ENDPOINTS.Profile}/update`,
+            {
+              first_name: firstName,
+              last_name: lastName,
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            },
+          ),
+          axios.put(
+            `${API_ENDPOINTS.Profile}/image`,
+            (() => {
+              const formData2 = new FormData();
+              formData2.append('file', {
+                uri: localImageUri,
+                name: 'profile.jpg',
+                type: 'image/jpeg',
+              });
+              return formData2;
+            })(),
+            {
+              headers: {
+                'Content-Type': 'multipart/form-data',
+                Authorization: `Bearer ${token}`,
+              },
+            },
+          ),
+        ]);
+        dispatch(fetchUserProfile());
+        Toast.show({
+          type: 'success',
+          text1: 'Berhasil',
+          text2: 'Profil dan foto berhasil diperbarui',
+        });
+      } else {
+        Toast.show({
+          type: 'info',
+          text1: 'Info',
+          text2: 'Tidak ada perubahan',
+        });
+      }
+    } catch (error) {
+      console.error('Update error: ', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Terjadi kesalahan saat memperbarui profil',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -48,20 +193,19 @@ const ProfileScreen = () => {
       </View>
       <View style={styles.profileContainer}>
         <View style={styles.avatarWrapper}>
-          {profile.image ? (
-            <Image
-              source={{uri: profile.profile_image}}
-              style={styles.avatar}
-            />
-          ) : (
-            <Image
-              source={require('../assets/Profile_Photo-1.png')}
-              style={styles.avatar}
-            />
-          )}
-          <View style={styles.editIcon}>
+          <Image
+            source={
+              localImageUri
+                ? {uri: localImageUri}
+                : profile?.profile_image
+                ? {uri: profile.profile_image}
+                : require('../assets/Profile_Photo-1.png')
+            }
+            style={styles.avatar}
+          />
+          <TouchableOpacity style={styles.editIcon} onPress={pickImage}>
             <Icon name="edit" size={16} color="#000" />
-          </View>
+          </TouchableOpacity>
         </View>
         <Text style={styles.nameText}>
           {profile.first_name} {profile.last_name}
@@ -169,14 +313,18 @@ const ProfileScreen = () => {
           )}
         />
 
-        <TouchableOpacity style={styles.editButton}>
-          <Text style={styles.editButtonText}>Edit Profile</Text>
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={handleSubmit(onSubmit)}>
+          <Text style={styles.editButtonText}>
+            {isLoading ? 'Loading...' : 'Edit Profile'}
+          </Text>
         </TouchableOpacity>
-
         <TouchableOpacity style={styles.logoutButton}>
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </View>
+      <Toast position="top" topOffset={60} />
     </View>
   );
 };

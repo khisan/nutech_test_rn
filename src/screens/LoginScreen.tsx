@@ -40,7 +40,9 @@ const LoginScreen = () => {
         password: data.password,
       });
 
-      const token = response.data.data.token;
+      const token = response.data?.data.token;
+      console.log('Token:', token);
+      console.log('response:', response);
       dispatch(loginSuccess(token));
 
       Toast.show({
