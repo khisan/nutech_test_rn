@@ -4,6 +4,9 @@ const API_ENDPOINTS = {
   Login: `${BASE_URL}/login`,
   Register: `${BASE_URL}/registration`,
   Profile: `${BASE_URL}/profile`,
+  Services: `${BASE_URL}/services`,
+  Banner: `${BASE_URL}/banner`,
+  Balance: `${BASE_URL}/balance`,
 };
 
 export default API_ENDPOINTS;
