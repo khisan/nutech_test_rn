@@ -225,11 +225,13 @@ const ProfileScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.sideButton}>
-          <Text style={styles.backText}>←</Text>
+        <TouchableOpacity
+          style={styles.sideButton}
+          onPress={() => navigation.goBack()}>
+          <MaterialCommunityIcons name="arrow-left" size={20} color="#000" />
+          <Text style={styles.backText}>Kembali</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Akun</Text>
-        <View style={styles.sideButton} />
       </View>
       <View style={styles.profileContainer}>
         <View style={styles.avatarWrapper}>
@@ -404,16 +406,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: 24,
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  backText: {
-    fontSize: 16,
-    color: '#000',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     textAlign: 'center',
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 1,
   },
   profileContainer: {
     alignItems: 'center',
@@ -507,5 +508,17 @@ const styles = StyleSheet.create({
   inputField: {
     flex: 1,
     height: 40,
+  },
+  backText: {
+    fontSize: 16,
+    marginLeft: 6,
+    color: '#000',
+  },
+  sideButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 3,
+    paddingVertical: 5,
+    zIndex: 2,
   },
 });

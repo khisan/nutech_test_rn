@@ -63,7 +63,10 @@ const LoginScreen = () => {
 
       console.log('Profile data:', profileData);
 
-      navigation.navigate('main');
+      navigation.reset({
+        index: 0,
+        routes: [{name: 'main'}],
+      });
     } catch (error) {
       console.log('Login error:', error);
 
