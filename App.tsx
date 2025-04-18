@@ -3,24 +3,27 @@ import {Provider} from 'react-redux';
 import {store} from './src/redux/store';
 import AppNavigator from './src/navigation';
 import RNBootSplash from 'react-native-bootsplash';
-import SplashScreen from './src/screens/SplashScreen';
 
 export default function App() {
-  const [isAppReady, setAppReady] = useState(false);
+  const [isAppReady, setIsAppReady] = useState(false);
+  const [showCustomSplash, setShowCustomSplash] = useState(true);
 
   useEffect(() => {
     const init = async () => {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      RNBootSplash.hide({fade: true});
-      setAppReady(true);
-    };
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setIsAppReady(true);
+      setTimeout(() => {
+        setShowCustomSplash(false);
+      }, 500);
 
+      RNBootSplash.hide({fade: true});
+    };
     init();
   }, []);
 
   return (
     <Provider store={store}>
-      {isAppReady ? <AppNavigator /> : <SplashScreen />}
+      <AppNavigator />
     </Provider>
   );
 }
