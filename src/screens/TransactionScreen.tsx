@@ -1,91 +1,176 @@
-import React from 'react';
-import {View, Text, FlatList, TouchableOpacity, StyleSheet} from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import axios from 'axios';
+import {useSelector} from 'react-redux';
+import API_ENDPOINTS from '../api/api';
+import {formatIndonesianDate} from '../utils/formatIndonesianDate';
 
-const transactions = [
-  {
-    id: '1',
-    type: 'topup',
-    amount: 10000,
-    date: '17 Agustus 2023',
-    time: '09:00 WIB',
-    title: 'Top Up Saldo',
-  },
-  {
-    id: '2',
-    type: 'expense',
-    amount: 40000,
-    date: '17 Agustus 2023',
-    time: '12:15 WIB',
-    title: 'Pulsa Prabayar',
-  },
-  {
-    id: '3',
-    type: 'expense',
-    amount: 10000,
-    date: '17 Agustus 2023',
-    time: '13:30 WIB',
-    title: 'Listrik Prabayar',
-  },
-  {
-    id: '4',
-    type: 'topup',
-    amount: 50000,
-    date: '17 Agustus 2023',
-    time: '15:45 WIB',
-    title: 'Top Up Saldo',
-  },
-];
+const LIMIT = 5;
 
 const TransactionScreen = () => {
-  const renderItem = ({item}: any) => (
-    <View
-      style={[
-        styles.card,
-        item.type === 'topup' ? styles.incomeBorder : styles.expenseBorder,
-      ]}>
-      <View>
-        <Text
-          style={[
-            styles.amount,
-            item.type === 'topup' ? styles.incomeText : styles.expenseText,
-          ]}>
-          {item.type === 'topup' ? '+' : '-'}Rp
-          {item.amount.toLocaleString('id-ID')}
-        </Text>
-        <Text style={styles.date}>
-          {item.date} • {item.time}
-        </Text>
+  const token = useSelector(state => state.auth.token);
+  const [transactions, setTransactions] = useState([]);
+  const [offset, setOffset] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [balance, setBalance] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchBalance = async () => {
+    try {
+      const response = await axios.get(API_ENDPOINTS.Balance, {
+        headers: {Authorization: `Bearer ${token}`},
+      });
+
+      if (response.data.status === 0) {
+        setBalance(response.data.data.balance);
+      } else {
+        throw new Error('Gagal mendapatkan saldo');
+      }
+    } catch (error) {
+      console.error('Error fetching balance:', error);
+      throw error;
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    setOffset(0);
+    setHasMore(true);
+    try {
+      await fetchBalance(); // Ambil saldo baru
+
+      const response = await axios.get(
+        `${API_ENDPOINTS.TransactionHistory}?offset=0&limit=${LIMIT}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (response.data.status === 0) {
+        const fetched = response.data.data.records;
+        setTransactions(fetched);
+        if (fetched.length < LIMIT) setHasMore(false);
+      }
+    } catch (error) {
+      console.error('Error refreshing data:', error.message);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const fetchTransactions = async () => {
+    if (loading || !hasMore) return;
+    setLoading(true);
+
+    try {
+      const nextOffset = offset + LIMIT;
+      const response = await axios.get(
+        `${API_ENDPOINTS.TransactionHistory}?offset=${nextOffset}&limit=${LIMIT}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (response.data.status === 0) {
+        const fetched = response.data.data.records;
+        setTransactions(prev => [...prev, ...fetched]);
+        setOffset(nextOffset);
+        if (fetched.length < LIMIT) setHasMore(false);
+      }
+    } catch (error) {
+      console.error('Error fetching more transactions:', error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    handleRefresh();
+  }, []);
+
+  const renderItem = ({item}) => {
+    console.log('Rendering item:', item);
+    const isTopup = item.transaction_type === 'TOPUP';
+    const amountColor = isTopup ? styles.incomeText : styles.expenseText;
+    const amountSign = isTopup ? '+' : '-';
+
+    return (
+      <View
+        style={[
+          styles.card,
+          isTopup ? styles.incomeBorder : styles.expenseBorder,
+        ]}>
+        <View style={styles.row}>
+          <View style={{flex: 1}}>
+            <Text style={[styles.amount, amountColor]}>
+              {amountSign} Rp{item.total_amount.toLocaleString('id-ID')}
+            </Text>
+            <Text style={styles.date}>
+              {formatIndonesianDate(item.created_on)}
+            </Text>
+          </View>
+          <View style={styles.rightContent}>
+            <Text style={styles.title}>{item.description}</Text>
+          </View>
+        </View>
       </View>
-      <Text style={styles.title}>{item.title}</Text>
-    </View>
-  );
+    );
+  };
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <Icon name="arrow-back" size={24} />
         <Text style={styles.headerText}>Transaksi</Text>
-        <View style={{width: 24}} /> {/* Spacer */}
+        <View style={{width: 24}} />
       </View>
 
-      {/* Saldo card */}
       <View style={styles.balanceCard}>
         <Text style={styles.cardLabel}>Saldo anda</Text>
-        <Text style={styles.cardAmount}>Rp 10.000</Text>
+        <Text style={styles.cardAmount}>
+          {balance !== null ? `Rp ${balance.toLocaleString('id-ID')}` : 0}
+        </Text>
       </View>
 
-      {/* Transaksi */}
       <Text style={styles.sectionTitle}>Transaksi</Text>
       <FlatList
+        showsVerticalScrollIndicator={false}
         data={transactions}
         renderItem={renderItem}
-        keyExtractor={item => item.id}
+        keyExtractor={item => item.invoice_number}
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
+        ListEmptyComponent={
+          !refreshing && (
+            <Text style={styles.emptyText}>Belum ada transaksi</Text>
+          )
+        }
         ListFooterComponent={
-          <TouchableOpacity style={styles.showMoreBtn}>
-            <Text style={styles.showMoreText}>Show more</Text>
-          </TouchableOpacity>
+          hasMore ? (
+            <TouchableOpacity
+              style={styles.showMoreBtn}
+              onPress={fetchTransactions}
+              disabled={loading}>
+              {loading ? (
+                <ActivityIndicator color="#dc2626" />
+              ) : (
+                <Text style={styles.showMoreText}>Show more</Text>
+              )}
+            </TouchableOpacity>
+          ) : null
         }
       />
     </View>
@@ -148,7 +233,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fef2f2',
   },
   amount: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: 'bold',
   },
   incomeText: {
@@ -160,13 +245,13 @@ const styles = StyleSheet.create({
   date: {
     fontSize: 12,
     color: '#6b7280',
-    marginTop: 2,
+    marginTop: 4,
   },
   title: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#374151',
-    marginTop: 8,
     fontWeight: '500',
+    textAlign: 'right',
   },
   showMoreBtn: {
     alignItems: 'center',
@@ -175,5 +260,15 @@ const styles = StyleSheet.create({
   showMoreText: {
     color: '#dc2626',
     fontWeight: '500',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  rightContent: {
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    maxWidth: '45%',
   },
 });

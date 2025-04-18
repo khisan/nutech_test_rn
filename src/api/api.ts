@@ -9,6 +9,7 @@ const API_ENDPOINTS = {
   Balance: `${BASE_URL}/balance`,
   TopUp: `${BASE_URL}/topup`,
   Transaction: `${BASE_URL}/transaction`,
+  TransactionHistory: `${BASE_URL}/transaction/history`,
 };
 
 export default API_ENDPOINTS;
